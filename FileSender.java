@@ -1,11 +1,15 @@
 import java.io.*;
 import java.net.*;
 import java.security.*;
-import java.security.spec.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
-import javax.crypto.Cipher;
+import javax.crypto.*;
+
+import crypto.RSAUtil;
 
 public class FileSender {
+    @SuppressWarnings("resource")
     public static void main(String[] args) throws Exception {
         Socket socket = new Socket("localhost", 5000);
         DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -30,38 +34,40 @@ public class FileSender {
 
         System.out.println("Loaded sender private key.");
         System.out.println("Loaded receiver public key.");
-        System.out.println("Encrypting file with receiver's public key...");
 
-        byte[] encryptedData = encrypt(fileBytes, receiverPublic);
+        System.out.println("Signing file...");
+        byte[] signature = RSAUtil.signBytes(fileBytes, senderPrivate);
 
-        System.out.println("Signing encrypted data with sender's private key...");
-        byte[] signature = signData(encryptedData, senderPrivate);
+        // Combine file + signature
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.write(fileBytes);
+        baos.write(signature);
+        byte[] combinedData = baos.toByteArray();
 
-        System.out.println("Encrypted data length: " + encryptedData.length);
-        System.out.println("Signature length: " + signature.length);
+        // Generate AES key
+        KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+        keyGen.init(128); // 128-bit AES
+        SecretKey aesKey = keyGen.generateKey();
 
+        // Encrypt combined data with AES
+        Cipher aesCipher = Cipher.getInstance("AES");
+        aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
+        byte[] encryptedData = aesCipher.doFinal(combinedData);
+
+        // Encrypt AES key with RSA
+        byte[] encryptedAesKey = RSAUtil.encryptBytes(aesKey.getEncoded(), receiverPublic);
+
+        // Send encrypted AES key
+        dos.writeInt(encryptedAesKey.length);
+        dos.write(encryptedAesKey);
+
+        // Send encrypted data
         dos.writeInt(encryptedData.length);
         dos.write(encryptedData);
-
-        dos.writeInt(signature.length);
-        dos.write(signature);
 
         dos.close();
         socket.close();
         System.out.println("Data sent successfully.");
-    }
-
-    public static byte[] encrypt(byte[] data, PublicKey key) throws Exception {
-        Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, key);
-        return cipher.doFinal(data);
-    }
-
-    public static byte[] signData(byte[] data, PrivateKey key) throws Exception {
-        Signature signature = Signature.getInstance("SHA256withRSA");
-        signature.initSign(key);
-        signature.update(data);
-        return signature.sign();
     }
 
     public static PrivateKey loadPrivateKey(String file) throws Exception {
