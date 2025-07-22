@@ -27,7 +27,7 @@ public class Blockchain implements Serializable {
     }
 
     public void printBlockchain() {
-        System.out.println("======= Current Blockchain =======");
+        System.out.println("\n======= Current Blockchain =======\n");
         for (Block block : chain) {
             System.out.println(block);
             System.out.println("----------------------------------");

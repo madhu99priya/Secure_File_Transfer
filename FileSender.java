@@ -35,7 +35,7 @@ public class FileSender {
         System.out.println("Loaded sender private key.");
         System.out.println("Loaded receiver public key.");
 
-        System.out.println("Signing file...");
+        System.out.println("Signing file with sender's private key");
         byte[] signature = RSAUtil.signBytes(fileBytes, senderPrivate);
 
         // Combine file + signature
@@ -50,11 +50,13 @@ public class FileSender {
         SecretKey aesKey = keyGen.generateKey();
 
         // Encrypt combined data with AES
+        System.out.println("Encrypting the signed file with AES key");
         Cipher aesCipher = Cipher.getInstance("AES");
         aesCipher.init(Cipher.ENCRYPT_MODE, aesKey);
         byte[] encryptedData = aesCipher.doFinal(combinedData);
 
         // Encrypt AES key with RSA
+        System.out.println("Encrypting the AES key with receiver's public key");
         byte[] encryptedAesKey = RSAUtil.encryptBytes(aesKey.getEncoded(), receiverPublic);
 
         // Send encrypted AES key
@@ -67,7 +69,7 @@ public class FileSender {
 
         dos.close();
         socket.close();
-        System.out.println("Data sent successfully.");
+        System.out.println("All the data sent successfully.");
     }
 
     public static PrivateKey loadPrivateKey(String file) throws Exception {

@@ -47,12 +47,16 @@ public class FileReceiver {
         PrivateKey receiverPrivate = loadPrivateKey("keys/receiver_private.key");
         PublicKey senderPublic = loadPublicKey("keys/sender_public.key");
 
+        System.out.println("\nLoaded receiver private key.");
+        System.out.println("Loaded sender public key.");
+
         // Receive encrypted AES key
         int aesKeyLen = dis.readInt();
         byte[] encryptedAesKey = new byte[aesKeyLen];
         dis.readFully(encryptedAesKey);
 
         // Decrypt AES key using RSA
+        System.out.println("Decrypting the AES key using receiver's private key");
         byte[] aesKeyBytes = RSAUtil.decryptBytes(encryptedAesKey, receiverPrivate);
         SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
 
@@ -62,6 +66,7 @@ public class FileReceiver {
         dis.readFully(encryptedData);
 
         // Decrypt the combined data
+        System.out.println("Decrypting the signed file with the AES key ");
         Cipher aesCipher = Cipher.getInstance("AES");
         aesCipher.init(Cipher.DECRYPT_MODE, aesKey);
         byte[] combinedData = aesCipher.doFinal(encryptedData);
@@ -73,13 +78,14 @@ public class FileReceiver {
         byte[] fileBytes = Arrays.copyOfRange(combinedData, 0, fileLength);
         byte[] signature = Arrays.copyOfRange(combinedData, fileLength, combinedData.length);
 
-        System.out.println("Verifying signature...");
+        System.out.println("Verifying signature using the sender's public key");
         if (!RSAUtil.verifyBytes(fileBytes, signature, senderPublic)) {
             System.out.println("Invalid signature. Aborting file save.");
             return;
         }
 
         // Save decrypted content to file
+        System.out.println("Saving file content of the received file");
         new FileOutputStream("received_file.txt").write(fileBytes);
         System.out.println("File saved as received_file.txt");
         System.out.println("Decrypted File Content:\n" + new String(fileBytes));
