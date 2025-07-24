@@ -35,9 +35,10 @@ public class FileReceiver {
             socket.close();
             return;
         } else {
+            System.out.println("No replay attack detected. Block is addeding to blockchain.");
             blockchain.addBlock(timestamp, flowID);
             blockchain.saveToFile("blockchain_data.ser");
-            System.out.println("No replay detected. Block added to blockchain.");
+            System.out.println("Block is added to blockchain.");
         }
 
         // Print the current blockchain for audit
