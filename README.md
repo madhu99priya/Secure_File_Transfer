@@ -21,7 +21,9 @@ This project implements a **simple and secure file transfer system** using crypt
 The following diagram illustrates the secure file transfer process between the **Sender** and **Receiver**, highlighting 
 the use of cryptographic primitives (RSA, AES, and hashing), flowID/timestamp exchange, and blockchain-based replay protection.
 
-<!---![Secure File Transfer Diagram](images/secure_file_transfer.png) --->
+<p align="center">
+  <img src="./Protocol_Design.png" alt="Secure File Transfer Diagram" width="600"/>
+</p>
 
 ## 🛠 Technologies Used
 
